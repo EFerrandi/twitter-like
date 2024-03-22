@@ -5,7 +5,7 @@ import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import org.jboss.resteasy.reactive.common.NotImplementedYet;
-import org.zatsit.domain.PostingKafkaAdaptor;
+import org.zatsit.domain.PostingKafkaAdapter;
 import org.zatsit.dto.PostDto;
 
 import java.util.UUID;
@@ -14,7 +14,7 @@ import java.util.UUID;
 public class PostingController {
 
     @Inject
-    PostingKafkaAdaptor postingKafkaAdaptor;
+    PostingKafkaAdapter postingKafkaAdapter;
 
     @GET
     @Path("/allPosts")
@@ -27,19 +27,19 @@ public class PostingController {
     @Path("/createPost")
     @Consumes({MediaType.APPLICATION_JSON, "application/json;charset=UTF-8"})
     public void createPost(PostDto postDto) {
-        postingKafkaAdaptor.sendToKafka("CREATE", postDto);
+        postingKafkaAdapter.sendToKafka("CREATE", postDto);
     }
 
     @POST
     @Path("/updatePost")
     public void updatePost(PostDto postDto) {
-        postingKafkaAdaptor.sendToKafka("UPDATE", postDto);
+        postingKafkaAdapter.sendToKafka("UPDATE", postDto);
     }
 
     @DELETE
     @Path("/deletePost")
     public void createPost(UUID postUuid) {
-        postingKafkaAdaptor.sendToKafka("DELETE",
+        postingKafkaAdapter.sendToKafka("DELETE",
                 PostDto.builder().uuid(postUuid).build());
     }
 

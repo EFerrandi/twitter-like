@@ -7,7 +7,7 @@ import org.eclipse.microprofile.reactive.messaging.Emitter;
 import org.zatsit.dto.PostDto;
 
 @ApplicationScoped
-public class PostingKafkaAdaptor {
+public class PostingKafkaAdapter {
 
     @Inject
     @Channel("posting")
