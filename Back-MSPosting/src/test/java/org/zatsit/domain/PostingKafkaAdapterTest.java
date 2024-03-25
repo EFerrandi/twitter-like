@@ -60,7 +60,7 @@ class PostingKafkaAdapterTest {
                         .build())
                 .build();
 
-        postingKafkaAdapter.sendToKafka("ACTION", postDto);
+        UUID postUuid = postingKafkaAdapter.sendToKafka("ACTION", postDto);
 
         Assertions.assertEquals(1, results.received().size());
 
@@ -69,6 +69,8 @@ class PostingKafkaAdapterTest {
         Assertions.assertNotNull(jsonNode.get("payload").get("uuid"));
 
         postDto.setUuid(UUID.fromString(jsonNode.get("payload").get("uuid").textValue()));
+        Assertions.assertEquals(postUuid, postDto.getUuid());
+
         String expectedResult = STR."{\"action\":\"ACTION\",\"payload\":\{objectMapper.writeValueAsString(postDto)}}";
         Assertions.assertEquals(expectedResult, results.received().getFirst().getPayload());
     }
@@ -78,8 +80,9 @@ class PostingKafkaAdapterTest {
     void sendToKafka_WithUUID() throws JsonProcessingException {
         InMemorySink<String> results = connector.sink("posting");
 
+        UUID entryUuid = UUID.fromString("018e6572-1479-7ad2-889d-98a38c3bddd0");
         PostDto postDto = PostDto.builder()
-                .uuid(UUID.fromString("018e6572-1479-7ad2-889d-98a38c3bddd0"))
+                .uuid(entryUuid)
                 .message("Test Message")
                 .imageUrl("http://img.url")
                 .user(UserDto.builder()
@@ -91,8 +94,9 @@ class PostingKafkaAdapterTest {
 
         String expectedResult = STR."{\"action\":\"ACTION\",\"payload\":\{objectMapper.writeValueAsString(postDto)}}";
 
-        postingKafkaAdapter.sendToKafka("ACTION", postDto);
+        UUID postUuid = postingKafkaAdapter.sendToKafka("ACTION", postDto);
 
+        Assertions.assertEquals(postUuid, entryUuid);
         Assertions.assertEquals(2, results.received().size());
         Assertions.assertEquals(expectedResult, results.received().get(1).getPayload());
     }

@@ -5,9 +5,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.AssertTrue;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 import org.hibernate.validator.constraints.URL;
 
 import java.util.UUID;
@@ -15,6 +13,8 @@ import java.util.UUID;
 @Getter
 @Setter
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class PostDto {
         @Id
         @GeneratedValue(strategy = GenerationType.UUID)

@@ -33,15 +33,16 @@ public class PostingController {
 
     @PUT
     @Path("/createPost")
-    @Consumes({MediaType.APPLICATION_JSON})
-    public RestResponse<Void> createPost(@Valid PostDto postDto) {
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public RestResponse<String> createPost(@Valid PostDto postDto) {
         if (postDto == null) {
             throw new InvalidDtoException("No post :(");
         }
 
         try {
-            postingKafkaAdapter.sendToKafka("CREATE", postDto);
-            return RestResponse.status(RestResponse.Status.CREATED);
+            UUID postUuid = postingKafkaAdapter.sendToKafka("CREATE", postDto);
+            return RestResponse.accepted(STR."{\"PostUuidpostUuid\":\"\{postUuid.toString()}\"}");
         } catch (IllegalStateException _) {
             throw new UnavailableResourceException("Cannot create post");
         }
@@ -54,7 +55,7 @@ public class PostingController {
     }
 
     @DELETE
-    @Path("/deletePost")
+    @Path("/deletePost/{postUuid}")
     public void deletePost(UUID postUuid) throws JsonProcessingException {
         postingKafkaAdapter.sendToKafka("DELETE",
                 PostDto.builder().uuid(postUuid).build());

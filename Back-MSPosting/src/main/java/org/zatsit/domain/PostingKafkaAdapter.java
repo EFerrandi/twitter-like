@@ -20,7 +20,7 @@ public class PostingKafkaAdapter {
 
     ObjectMapper objectMapper = new ObjectMapper();
 
-    public void sendToKafka(String action, PostDto postDto) {
+    public UUID sendToKafka(String action, PostDto postDto) {
         if (postDto.getUuid() == null) {
             postDto.setUuid(UUID.randomUUID());
         }
@@ -30,6 +30,7 @@ public class PostingKafkaAdapter {
                     {"action":"%s","payload":%s}"""
                     .formatted(action, objectMapper.writeValueAsString(postDto));
             emitter.send(message);
+            return postDto.getUuid();
         } catch (JsonProcessingException _) {
             throw new InvalidDtoException("Error while processing Post");
         }
