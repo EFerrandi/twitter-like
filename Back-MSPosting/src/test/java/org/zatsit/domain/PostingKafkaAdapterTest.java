@@ -5,19 +5,21 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.junit.mockito.InjectSpy;
 import io.smallrye.reactive.messaging.memory.InMemoryConnector;
 import io.smallrye.reactive.messaging.memory.InMemorySink;
+import io.smallrye.reactive.messaging.providers.extension.EmitterImpl;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.reactive.messaging.spi.Connector;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
+import org.mockito.Mockito;
 import org.zatsit.KafkaTestResourceLifecycleManager;
 import org.zatsit.dto.PostDto;
 import org.zatsit.dto.UserDto;
 
 import java.util.UUID;
+
+import static org.mockito.Mockito.doThrow;
 
 @QuarkusTest
 @QuarkusTestResource(KafkaTestResourceLifecycleManager.class)
@@ -27,7 +29,7 @@ class PostingKafkaAdapterTest {
     @Connector("smallrye-in-memory")
     InMemoryConnector connector;
 
-    @Inject
+    @InjectSpy
     PostingKafkaAdapter postingKafkaAdapter;
 
     ObjectMapper objectMapper = new ObjectMapper();
@@ -44,6 +46,7 @@ class PostingKafkaAdapterTest {
     }
 
     @Test
+    @Order(1)
     void sendToKafka_NoUUID() throws JsonProcessingException {
         InMemorySink<String> results = connector.sink("posting");
 
@@ -71,6 +74,7 @@ class PostingKafkaAdapterTest {
     }
 
     @Test
+    @Order(2)
     void sendToKafka_WithUUID() throws JsonProcessingException {
         InMemorySink<String> results = connector.sink("posting");
 
@@ -89,7 +93,30 @@ class PostingKafkaAdapterTest {
 
         postingKafkaAdapter.sendToKafka("ACTION", postDto);
 
-        Assertions.assertEquals(1, results.received().size());
-        Assertions.assertEquals(expectedResult, results.received().getFirst().getPayload());
+        Assertions.assertEquals(2, results.received().size());
+        Assertions.assertEquals(expectedResult, results.received().get(1).getPayload());
+    }
+
+    @Test
+    @Order(3)
+    void sendToKafka_NoKafka() {
+        postingKafkaAdapter.emitter = Mockito.mock(EmitterImpl.class);
+
+        doThrow(IllegalStateException.class)
+                .when(postingKafkaAdapter.emitter).send(Mockito.anyString());
+
+        PostDto postDto = PostDto.builder()
+                .uuid(UUID.fromString("4506d538-65af-4c2f-8ba1-bbd74430ecc6"))
+                .message("Test Message")
+                .imageUrl("http://img.url")
+                .user(UserDto.builder()
+                        .uuid(UUID.fromString("4f62b055-84a0-411f-8327-d20a635029e6"))
+                        .username("Test Username")
+                        .profilePictureUrl("http://profile.pic")
+                        .build())
+                .build();
+
+        Assertions.assertThrows(IllegalStateException.class,
+                () -> postingKafkaAdapter.sendToKafka("Action", postDto));
     }
 }
